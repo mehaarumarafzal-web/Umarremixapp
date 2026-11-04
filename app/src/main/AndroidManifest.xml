@@ -10,8 +10,13 @@
 
     <application
         android:allowBackup="true"
+<<<<<<< HEAD
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
+=======
+        android:icon="@drawable/app_icon_source"
+        android:roundIcon="@drawable/app_icon_source"
+>>>>>>> aa2e852b5bf32f0515c9361ba731abcacd0c0d0a
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.UmarMusic">
