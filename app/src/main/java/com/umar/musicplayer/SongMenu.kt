@@ -6,6 +6,7 @@ import android.provider.MediaStore
 import android.text.InputType
 import android.view.View
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
@@ -19,6 +20,7 @@ object SongMenu {
         val v = View.inflate(ctx, R.layout.sheet_song_menu, null)
         fun row(id: Int, click: () -> Unit) = v.findViewById<TextView>(id).setOnClickListener { d.dismiss(); click() }
         row(R.id.mAdd) { pickPlaylist(ctx, song.id, onChanged) }
+        row(R.id.mTrim) { openTrimDialog(ctx, song) }
         row(R.id.mSleep) { pickSleep(ctx) }
         row(R.id.mSpeed) { pickSpeed(ctx) }
         row(R.id.mEdit) { editTitle(ctx, song, onChanged) }
@@ -29,7 +31,63 @@ object SongMenu {
         d.setContentView(v); d.show()
     }
 
-    /** Cover editor: disc preview + zoom slider. Save par zoom save hota hai. */
+    fun openTrimDialog(ctx: Context, song: Song) {
+        val durSec = (song.duration / 1000).toInt().coerceAtLeast(1)
+        val startCur = (Store.trimStartFor(song.id) / 1000).toInt().coerceIn(0, durSec)
+        val endStored = (Store.trimEndFor(song.id) / 1000).toInt()
+        val endCur = if (endStored <= 0) durSec else endStored.coerceIn(0, durSec)
+        val dpx = (16 * ctx.resources.displayMetrics.density).toInt()
+
+        val col = LinearLayout(ctx); col.orientation = LinearLayout.VERTICAL
+        val pad = (24 * ctx.resources.displayMetrics.density).toInt()
+        col.setPadding(pad, pad / 2, pad, pad / 2)
+
+        val ls = TextView(ctx); ls.text = "Start: " + fmt(startCur); ls.setTextColor(0xFFFFFFFF.toInt()); ls.textSize = 15f
+        val ss = SeekBar(ctx); ss.max = durSec; ss.progress = startCur
+        val le = TextView(ctx); le.text = "End: " + fmt(endCur); le.setTextColor(0xFFFFFFFF.toInt()); le.textSize = 15f
+        le.setPadding(0, dpx, 0, 0)
+        val se = SeekBar(ctx); se.max = durSec; se.progress = endCur
+        val reset = TextView(ctx); reset.text = "Reset (poora song)"; reset.setTextColor(0xFF9E9E9E.toInt())
+        reset.setPadding(0, dpx, 0, 0)
+
+        ss.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar?, p: Int, fromUser: Boolean) {
+                if (!fromUser) return
+                ls.text = "Start: " + fmt(p)
+                if (p > se.progress) se.progress = p
+            }
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {}
+        })
+        se.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar?, p: Int, fromUser: Boolean) {
+                if (!fromUser) return
+                le.text = "End: " + fmt(p)
+                if (p < ss.progress) ss.progress = p
+            }
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {}
+        })
+        reset.setOnClickListener {
+            ss.progress = 0; se.progress = durSec
+            ls.text = "Start: " + fmt(0); le.text = "End: " + fmt(durSec)
+        }
+
+        col.addView(ls); col.addView(ss); col.addView(le); col.addView(se); col.addView(reset)
+
+        AlertDialog.Builder(ctx).setTitle("Start / End time")
+            .setView(col)
+            .setPositiveButton(R.string.save) { _, _ ->
+                val sV = ss.progress * 1000L
+                val eV = if (se.progress >= durSec) 0L else se.progress * 1000L
+                Store.setTrim(song.id, sV, eV)
+                Toast.makeText(ctx, "Range: " + fmt(ss.progress) + " → " + fmt(se.progress), Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+    private fun fmt(s: Int) = "%d:%02d".format(s / 60, s % 60)
+
     fun openCoverEditor(ctx: Context, path: String, songId: Long, global: Boolean, done: () -> Unit) {
         val bmp = ImageUtils.loadSharp(path, 512, 512)
         if (bmp == null) { done(); return }

@@ -91,6 +91,10 @@ object Store {
     fun rewFwdSize(): Int = sp.getInt("rfsize2", 72)
     fun setRewFwdSize(v: Int) = sp.edit().putInt("rfsize2", v).apply()
 
+    fun trimStartFor(id: Long): Long = sp.getLong("ts_$id", 0L)
+    fun trimEndFor(id: Long): Long = sp.getLong("te_$id", 0L)
+    fun setTrim(id: Long, startMs: Long, endMs: Long) = sp.edit().putLong("ts_$id", startMs).putLong("te_$id", endMs).apply()
+
     fun coverFor(id: Long): String? = sp.getString("cov_$id", null)
     fun setCover(id: Long, p: String?) = sp.edit().putString("cov_$id", p).apply()
     fun titleFor(id: Long, def: String): String = sp.getString("tit_$id", null) ?: def

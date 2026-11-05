@@ -14,9 +14,9 @@
         <Button android:id="@+id/btnChoose" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="18dp" android:text="@string/choose_background" android:textColor="@color/white" android:background="@drawable/bg_search" />
         <Button android:id="@+id/btnReset" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="18dp" android:layout_marginEnd="18dp" android:text="@string/reset_background" android:textColor="@color/gray_text" android:background="@drawable/bg_search" />
 
-        <TextView style="@style/SectionTitle" android:text="All songs cover" />
-        <Button android:id="@+id/btnAllCover" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="18dp" android:layout_marginEnd="18dp" android:text="Set one cover for all songs" android:textColor="@color/white" android:background="@drawable/bg_search" />
-        <Button android:id="@+id/btnResetCovers" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="18dp" android:text="Reset all covers" android:textColor="@color/gray_text" android:background="@drawable/bg_search" />
+        <TextView style="@style/SectionTitle" android:text="Disc center image (sab songs)" />
+        <Button android:id="@+id/btnAllCover" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="18dp" android:layout_marginEnd="18dp" android:text="Disc ki center image set karo (zoom ke saath)" android:textColor="@color/white" android:background="@drawable/bg_search" />
+        <Button android:id="@+id/btnResetCovers" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="18dp" android:text="Disc image reset karo (wapas song ka apna cover)" android:textColor="@color/gray_text" android:background="@drawable/bg_search" />
 
         <TextView style="@style/SectionTitle" android:text="Player buttons" />
         <Button android:id="@+id/btnRewSize" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="18dp" android:layout_marginEnd="18dp" android:layout_marginBottom="18dp" android:text="Rewind / Forward button size" android:textColor="@color/white" android:background="@drawable/bg_search" />

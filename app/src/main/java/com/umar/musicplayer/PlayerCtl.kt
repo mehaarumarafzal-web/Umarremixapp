@@ -23,6 +23,7 @@ object PlayerCtl {
     private val sleepHandler = Handler(Looper.getMainLooper())
     private var sleepRunnable: Runnable? = null
     var sleepMinutes = 0
+    private val trimH = Handler(Looper.getMainLooper())
 
     fun bind(ctx: Context) {
         if (bound) return
@@ -42,13 +43,35 @@ object PlayerCtl {
         c.addListener(object : Player.Listener {
             override fun onEvents(player: Player, events: Player.Events) { onChange?.invoke() }
             override fun onIsPlayingChanged(isPlaying: Boolean) { onChange?.invoke() }
-            override fun onMediaItemTransition(item: MediaItem?, reason: Int) { onChange?.invoke() }
+            override fun onMediaItemTransition(item: MediaItem?, reason: Int) {
+                onChange?.invoke()
+                val s = currentSong()
+                if (s != null) { val st = Store.trimStartFor(s.id); if (st > 0) p()?.seekTo(st) }
+            }
             override fun onPlaybackStateChanged(state: Int) { onChange?.invoke() }
         })
+        trimH.removeCallbacks(trimTick)
+        trimH.postDelayed(trimTick, 700)
         onChange?.invoke()
     }
 
-    fun unbind() { controller?.release(); controller = null; bound = false }
+    private val trimTick = object : Runnable {
+        override fun run() {
+            enforceEnd()
+            trimH.postDelayed(this, 700)
+        }
+    }
+
+    private fun enforceEnd() {
+        val s = currentSong() ?: return
+        val en = Store.trimEndFor(s.id)
+        if (en > 0 && isPlaying() && position() >= en) next()
+    }
+
+    fun unbind() {
+        trimH.removeCallbacks(trimTick)
+        controller?.release(); controller = null; bound = false
+    }
 
     private fun p() = controller
     private fun uri(id: Long) = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
@@ -64,6 +87,8 @@ object PlayerCtl {
         pl.setMediaItems(songs.map { item(it) }, idx, 0)
         pl.shuffleModeEnabled = shuffle
         pl.prepare(); pl.play()
+        val st = Store.trimStartFor(songs[idx].id)
+        if (st > 0) pl.seekTo(st)
     }
     fun toggle() { val pl = p() ?: return; if (pl.isPlaying) pl.pause() else pl.play() }
     fun next() { p()?.seekToNextMediaItem() }

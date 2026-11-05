@@ -134,7 +134,7 @@ class PlayerActivity : AppCompatActivity() {
             val bmp = if (custom != null)
                 ImageUtils.loadSharp(custom, 512, 512)?.let { ImageUtils.prepareWithZoom(it, z) }
             else
-                ImageUtils.embeddedArt(this, id)?.let { ImageUtils.centerCropSquare(it) }
+                ImageUtils.embeddedArt(this, id)?.let { ImageUtils.prepareWithZoom(it, 0.98f) }
             disc.setArt(bmp)
         }
     }

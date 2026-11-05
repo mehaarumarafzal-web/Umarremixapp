@@ -22,7 +22,15 @@ class VinylDiscView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet?
     }
     private fun dp(v: Float) = v * resources.displayMetrics.density
 
-    fun setPlaying(v: Boolean) { playing = v; if (v) { if (!animator.isStarted) animator.start() } else animator.cancel() }
+    fun setPlaying(v: Boolean) {
+        playing = v
+        if (v) {
+            if (animator.isStarted) animator.resume() else animator.start()
+        } else {
+            if (animator.isStarted) animator.pause()
+        }
+        invalidate()
+    }
     fun setArt(b: Bitmap?) { art = b; invalidate() }
     override fun onDetachedFromWindow() { animator.cancel(); super.onDetachedFromWindow() }
 
