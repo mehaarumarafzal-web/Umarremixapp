@@ -10,10 +10,16 @@
         <com.umar.musicplayer.VinylDiscView android:id="@+id/disc" android:layout_width="match_parent" android:layout_height="match_parent" />
         <com.umar.musicplayer.TonearmView android:id="@+id/arm" android:layout_width="match_parent" android:layout_height="match_parent" />
 
-        <ImageButton android:id="@+id/rew" android:layout_width="64dp" android:layout_height="64dp" android:layout_gravity="start|center_vertical" android:layout_marginStart="2dp" android:background="@drawable/bg_circle_dark" android:rotation="180" android:scaleType="fitCenter" android:src="@drawable/ic_loop_arrow" android:contentDescription="Rewind 10" />
-        <TextView android:id="@+id/rewLabel" android:layout_width="64dp" android:layout_height="64dp" android:layout_gravity="start|center_vertical" android:layout_marginStart="2dp" android:gravity="center" android:text="-10" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" />
-        <ImageButton android:id="@+id/fwd" android:layout_width="64dp" android:layout_height="64dp" android:layout_gravity="end|center_vertical" android:layout_marginEnd="2dp" android:background="@drawable/bg_circle_dark" android:scaleType="fitCenter" android:src="@drawable/ic_loop_arrow" android:contentDescription="Forward 10" />
-        <TextView android:id="@+id/fwdLabel" android:layout_width="64dp" android:layout_height="64dp" android:layout_gravity="end|center_vertical" android:layout_marginEnd="2dp" android:gravity="center" android:text="+10" android:textColor="@color/white" android:textSize="13sp" android:textStyle="bold" />
+        <TextView android:id="@+id/rewBtn" android:layout_width="72dp" android:layout_height="72dp"
+            android:layout_gravity="start|center_vertical" android:layout_marginStart="6dp"
+            android:background="@drawable/bg_skip_yellow" android:gravity="center"
+            android:text="-10s" android:textColor="#FF1B1B2E" android:textSize="18sp" android:textStyle="bold"
+            android:clickable="true" android:focusable="true" />
+        <TextView android:id="@+id/fwdBtn" android:layout_width="72dp" android:layout_height="72dp"
+            android:layout_gravity="end|center_vertical" android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_skip_yellow" android:gravity="center"
+            android:text="+10s" android:textColor="#FF1B1B2E" android:textSize="18sp" android:textStyle="bold"
+            android:clickable="true" android:focusable="true" />
 
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_gravity="top" android:orientation="horizontal" android:gravity="center_vertical" android:padding="10dp">
             <ImageButton android:id="@+id/expand" android:layout_width="40dp" android:layout_height="40dp" android:background="?attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_keyboard_arrow_down" android:contentDescription="@string/cancel" />

@@ -37,26 +37,24 @@ object ImageUtils {
         return Bitmap.createBitmap(b, x, y, s, s)
     }
 
-    /** mode: 0 = poora fit (letterbox), 1 = center fill (crop), 2 = zoom 1.5x */
-    fun prepareSquare(b: Bitmap, mode: Int): Bitmap = when (mode) {
-        0 -> letterboxSquare(b)
-        2 -> zoomCrop(centerCropSquare(b), 1.5f)
-        else -> centerCropSquare(b)
-    }
-
-    private fun zoomCrop(c: Bitmap, z: Float): Bitmap {
-        val s = (c.width / z).toInt().coerceAtLeast(1)
-        val off = (c.width - s) / 2
-        return Bitmap.createBitmap(c, off, off, s, s)
-    }
-
-    private fun letterboxSquare(b: Bitmap): Bitmap {
-        val s = maxOf(b.width, b.height)
-        val out = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888)
-        val cv = Canvas(out)
-        cv.drawColor(0xFF000000.toInt())
-        cv.drawBitmap(b, (s - b.width) / 2f, (s - b.height) / 2f, null)
-        return out
+    /** zoom >= 1: center se crop karke zoom; zoom < 1: poora image, kinare black */
+    fun prepareWithZoom(b: Bitmap, zoom: Float): Bitmap {
+        val z = zoom.coerceIn(0.5f, 3f)
+        if (z >= 1f) {
+            val s0 = minOf(b.width, b.height)
+            val s = (s0 / z).toInt().coerceAtLeast(1)
+            val x = (b.width - s) / 2; val y = (b.height - s) / 2
+            return Bitmap.createBitmap(b, x, y, s, s)
+        } else {
+            val side = maxOf(b.width, b.height)
+            val out = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+            val cv = Canvas(out); cv.drawColor(0xFF000000.toInt())
+            val w = (b.width * z).toInt().coerceAtLeast(1)
+            val h = (b.height * z).toInt().coerceAtLeast(1)
+            val sc = Bitmap.createScaledBitmap(b, w, h, true)
+            cv.drawBitmap(sc, (side - w) / 2f, (side - h) / 2f, null)
+            return out
+        }
     }
 
     private fun decodeFile(path: String, rw: Int, rh: Int): Bitmap? = try {

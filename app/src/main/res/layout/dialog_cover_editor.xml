@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical" android:padding="18dp" android:background="@color/black">
+
+    <com.umar.musicplayer.CoverPreviewView
+        android:id="@+id/preview"
+        android:layout_width="240dp" android:layout_height="240dp"
+        android:layout_gravity="center_horizontal" />
+
+    <SeekBar android:id="@+id/zoomSeek"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:progressTint="@color/purple" android:thumbTint="@color/white"
+        android:progressBackgroundTint="#33FFFFFF" />
+
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center" android:text="Zoom in / zoom out karke save karo"
+        android:textColor="@color/gray_text" android:textSize="13sp" />
+</LinearLayout>

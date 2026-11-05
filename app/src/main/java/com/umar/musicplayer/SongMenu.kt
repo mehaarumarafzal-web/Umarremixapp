@@ -6,6 +6,7 @@ import android.provider.MediaStore
 import android.text.InputType
 import android.view.View
 import android.widget.EditText
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -28,11 +29,33 @@ object SongMenu {
         d.setContentView(v); d.show()
     }
 
-    fun askCoverMode(ctx: Context, done: () -> Unit) {
-        val opts = arrayOf("Poora image (fit)", "Center fill (crop)", "Zoom 1.5x")
-        AlertDialog.Builder(ctx).setTitle("Disc par image kaise dikhe?")
-            .setItems(opts) { _, i -> Store.setCoverMode(i); done() }.show()
+    /** Cover editor: disc preview + zoom slider. Save par zoom save hota hai. */
+    fun openCoverEditor(ctx: Context, path: String, songId: Long, global: Boolean, done: () -> Unit) {
+        val bmp = ImageUtils.loadSharp(path, 512, 512)
+        if (bmp == null) { done(); return }
+        val v = View.inflate(ctx, R.layout.dialog_cover_editor, null)
+        val preview = v.findViewById<CoverPreviewView>(R.id.preview)
+        val seek = v.findViewById<SeekBar>(R.id.zoomSeek)
+        val cur = if (global) Store.globalZoom() else Store.zoomFor(songId)
+        preview.setBitmap(bmp); preview.setZoom(cur)
+        seek.progress = zoomToProgress(cur)
+        seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar?, p: Int, fromUser: Boolean) { if (fromUser) preview.setZoom(progressToZoom(p)) }
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {}
+        })
+        AlertDialog.Builder(ctx).setTitle("Cover set karo")
+            .setView(v)
+            .setPositiveButton(R.string.save) { _, _ ->
+                val z = preview.zoom()
+                if (global) Store.setGlobalZoom(z) else Store.setZoom(songId, z)
+                done()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
+    private fun zoomToProgress(z: Float) = (((z.coerceIn(0.5f, 3f)) - 0.5f) / 2.5f * 100).toInt()
+    private fun progressToZoom(p: Int) = 0.5f + (p / 100f) * 2.5f
 
     fun pickSleep(ctx: Context) {
         val opts = arrayOf("Off", "5 min", "10 min", "15 min", "30 min", "60 min")

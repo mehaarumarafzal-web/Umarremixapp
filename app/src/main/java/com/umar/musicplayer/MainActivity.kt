@@ -52,7 +52,7 @@ class MainActivity : AppCompatActivity() {
             if (uri != null && lastCoverId > 0)
                 ImageUtils.savePicked(this, uri)?.let { p ->
                     Store.setCover(lastCoverId, p)
-                    SongMenu.askCoverMode(this) { adapter.refresh() }
+                    SongMenu.openCoverEditor(this, p, lastCoverId, false) { adapter.refresh() }
                 }
         }
 

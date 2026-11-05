@@ -23,7 +23,9 @@ class SettingsActivity : AppCompatActivity() {
     private val coverPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) ImageUtils.savePicked(this, uri)?.let { p ->
             Store.setGlobalCover(p)
-            SongMenu.askCoverMode(this) { Toast.makeText(this, "Sab songs par cover lag gaya", Toast.LENGTH_SHORT).show() }
+            SongMenu.openCoverEditor(this, p, -1L, true) {
+                Toast.makeText(this, "Sab songs par cover lag gaya", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

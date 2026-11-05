@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -39,7 +38,7 @@ class PlayerActivity : AppCompatActivity() {
     private val coverPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null && lastId > 0) ImageUtils.savePicked(this, uri)?.let { p ->
             Store.setCover(lastId, p)
-            SongMenu.askCoverMode(this) { loadArt(lastId) }
+            SongMenu.openCoverEditor(this, p, lastId, false) { loadArt(lastId) }
         }
     }
 
@@ -57,8 +56,8 @@ class PlayerActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.expand).setOnClickListener { finish() }
         findViewById<ImageButton>(R.id.theme).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
         findViewById<ImageButton>(R.id.menu).setOnClickListener { showPlayerMenu() }
-        findViewById<ImageButton>(R.id.fwd).setOnClickListener { PlayerCtl.skip(10_000); softRefresh() }
-        findViewById<ImageButton>(R.id.rew).setOnClickListener { PlayerCtl.skip(-10_000); softRefresh() }
+        findViewById<TextView>(R.id.fwdBtn).setOnClickListener { PlayerCtl.skip(10_000); softRefresh() }
+        findViewById<TextView>(R.id.rewBtn).setOnClickListener { PlayerCtl.skip(-10_000); softRefresh() }
         playBtn.setOnClickListener { PlayerCtl.toggle() }
         findViewById<ImageButton>(R.id.next).setOnClickListener { PlayerCtl.next() }
         findViewById<ImageButton>(R.id.prev).setOnClickListener { PlayerCtl.prev() }
@@ -85,17 +84,9 @@ class PlayerActivity : AppCompatActivity() {
     private fun applyRewFwdSize() {
         val dpv = Store.rewFwdSize()
         val px = dp(dpv)
-        for (id in intArrayOf(R.id.rew, R.id.fwd)) {
-            val v = findViewById<ImageButton>(id)
-            v.scaleType = ImageView.ScaleType.FIT_CENTER
-            val pad = px / 4
-            v.setPadding(pad, pad, pad, pad)
-            val lp = v.layoutParams as FrameLayout.LayoutParams
-            lp.width = px; lp.height = px; v.layoutParams = lp
-        }
-        for (id in intArrayOf(R.id.rewLabel, R.id.fwdLabel)) {
+        for (id in intArrayOf(R.id.rewBtn, R.id.fwdBtn)) {
             val v = findViewById<TextView>(id)
-            v.textSize = dpv * 0.20f
+            v.textSize = dpv * 0.25f
             val lp = v.layoutParams as FrameLayout.LayoutParams
             lp.width = px; lp.height = px; v.layoutParams = lp
         }
@@ -137,9 +128,11 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun loadArt(id: Long) {
         artJob.post {
-            val custom = Store.coverFor(id) ?: Store.globalCover()
+            val own = Store.coverFor(id)
+            val custom = own ?: Store.globalCover()
+            val z = if (own != null) Store.zoomFor(id) else Store.globalZoom()
             val bmp = if (custom != null)
-                ImageUtils.loadSharp(custom, 512, 512)?.let { ImageUtils.prepareSquare(it, Store.coverMode()) }
+                ImageUtils.loadSharp(custom, 512, 512)?.let { ImageUtils.prepareWithZoom(it, z) }
             else
                 ImageUtils.embeddedArt(this, id)?.let { ImageUtils.centerCropSquare(it) }
             disc.setArt(bmp)

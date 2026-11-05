@@ -60,15 +60,24 @@ class SongAdapter(
         val coverPath = Store.coverFor(song.id) ?: Store.globalCover()
         h.thumb.tag = song.id
         if (coverPath != null) {
+            val z = if (Store.coverFor(song.id) != null) Store.zoomFor(song.id) else Store.globalZoom()
             h.thumb.background = null
             h.thumb.setImageBitmap(null)
             exec.execute {
-                val bmp = ImageUtils.loadSharp(coverPath, 120, 120)?.let { ImageUtils.centerCropSquare(it) }
+                val bmp = ImageUtils.loadSharp(coverPath, 120, 120)?.let { ImageUtils.prepareWithZoom(it, z) }
                 mainH.post { if (h.thumb.tag == song.id) h.thumb.setImageBitmap(bmp) }
             }
         } else {
             h.thumb.setImageBitmap(null)
             h.thumb.background = makeGradient(ctx, song.title.hashCode())
+            exec.execute {
+                val emb = ImageUtils.embeddedArt(ctx, song.id)
+                mainH.post {
+                    if (h.thumb.tag == song.id) {
+                        if (emb != null) { h.thumb.background = null; h.thumb.setImageBitmap(ImageUtils.centerCropSquare(emb)) }
+                    }
+                }
+            }
         }
 
         h.itemView.setOnClickListener { onSongClick(song, position) }

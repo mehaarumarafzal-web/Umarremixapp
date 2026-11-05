@@ -82,12 +82,14 @@ object Store {
 
     fun globalCover(): String? = sp.getString("gcov", null)
     fun setGlobalCover(p: String?) = sp.edit().putString("gcov", p).apply()
+    fun globalZoom(): Float = sp.getFloat("gz", 1f)
+    fun setGlobalZoom(z: Float) = sp.edit().putFloat("gz", z).apply()
 
-    fun coverMode(): Int = sp.getInt("cmode", 1)
-    fun setCoverMode(m: Int) = sp.edit().putInt("cmode", m).apply()
+    fun zoomFor(id: Long): Float = sp.getFloat("z_$id", 1f)
+    fun setZoom(id: Long, z: Float) = sp.edit().putFloat("z_$id", z).apply()
 
-    fun rewFwdSize(): Int = sp.getInt("rfsize", 64)
-    fun setRewFwdSize(v: Int) = sp.edit().putInt("rfsize", v).apply()
+    fun rewFwdSize(): Int = sp.getInt("rfsize2", 72)
+    fun setRewFwdSize(v: Int) = sp.edit().putInt("rfsize2", v).apply()
 
     fun coverFor(id: Long): String? = sp.getString("cov_$id", null)
     fun setCover(id: Long, p: String?) = sp.edit().putString("cov_$id", p).apply()
