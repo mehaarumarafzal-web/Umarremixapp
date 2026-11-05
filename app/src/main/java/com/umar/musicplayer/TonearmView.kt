@@ -17,15 +17,20 @@ class TonearmView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? =
     fun setProgress(p: Float) { progress = p.coerceIn(0f, 1f); invalidate() }
 
     override fun onDraw(canvas: Canvas) {
-        val cx = width / 2f; val cy = height / 2f
-        val r = Math.min(width, height) / 2f - dp(10f)
-        val pivotX = cx + r * 0.78f; val pivotY = cy - r * 0.92f
-        val startA = Math.toRadians(78.0); val endA = Math.toRadians(118.0)
+        val cx = width / 2f
+        val cy = height / 2f
+        val r = minOf(width, height) / 2f - dp(10f)
+        val pivotX = cx + r * 0.78f
+        val pivotY = cy - r * 0.92f
+        val startA = Math.toRadians(78.0).toFloat()
+        val endA = Math.toRadians(118.0).toFloat()
         val a = startA + (endA - startA) * progress
         var tipX = pivotX + cos(a) * r * 1.18f
         var tipY = pivotY + sin(a) * r * 1.18f
         if (!playing) tipY -= dp(26f)
-        paint.color = 0xFFFFFFFF.toInt(); paint.strokeWidth = dp(3f); paint.style = Paint.Style.STROKE
+        paint.color = 0xFFFFFFFF.toInt()
+        paint.strokeWidth = dp(3f)
+        paint.style = Paint.Style.STROKE
         canvas.drawLine(pivotX, pivotY, tipX, tipY, paint)
         paint.style = Paint.Style.FILL
         canvas.drawCircle(pivotX, pivotY, dp(7f), paint)
