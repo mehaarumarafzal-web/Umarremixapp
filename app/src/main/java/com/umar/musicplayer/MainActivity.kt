@@ -50,7 +50,10 @@ class MainActivity : AppCompatActivity() {
     private val coverPicker =
         registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
             if (uri != null && lastCoverId > 0)
-                ImageUtils.savePicked(this, uri)?.let { Store.setCover(lastCoverId, it); adapter.refresh() }
+                ImageUtils.savePicked(this, uri)?.let { p ->
+                    Store.setCover(lastCoverId, p)
+                    SongMenu.askCoverMode(this) { adapter.refresh() }
+                }
         }
 
     override fun onCreate(s: Bundle?) {
@@ -166,7 +169,7 @@ class MainActivity : AppCompatActivity() {
         val id = song.id
         artJob.post {
             val custom = Store.coverFor(id) ?: Store.globalCover()
-            val bmp = if (custom != null) ImageUtils.loadSharp(custom, 96, 96) else ImageUtils.embeddedArt(this, id)
+            val bmp = if (custom != null) ImageUtils.loadSharp(custom, 96, 96)?.let { ImageUtils.centerCropSquare(it) } else ImageUtils.embeddedArt(this, id)
             if (bmp != null) miniThumb.setImageBitmap(bmp)
         }
     }

@@ -83,6 +83,9 @@ object Store {
     fun globalCover(): String? = sp.getString("gcov", null)
     fun setGlobalCover(p: String?) = sp.edit().putString("gcov", p).apply()
 
+    fun coverMode(): Int = sp.getInt("cmode", 1)
+    fun setCoverMode(m: Int) = sp.edit().putInt("cmode", m).apply()
+
     fun rewFwdSize(): Int = sp.getInt("rfsize", 64)
     fun setRewFwdSize(v: Int) = sp.edit().putInt("rfsize", v).apply()
 

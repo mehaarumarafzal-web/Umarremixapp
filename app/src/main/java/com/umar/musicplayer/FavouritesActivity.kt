@@ -17,7 +17,10 @@ class FavouritesActivity : AppCompatActivity() {
     private var lastCoverId = -1L
 
     private val coverPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null && lastCoverId > 0) ImageUtils.savePicked(this, uri)?.let { Store.setCover(lastCoverId, it); adapter.refresh() }
+        if (uri != null && lastCoverId > 0) ImageUtils.savePicked(this, uri)?.let { p ->
+            Store.setCover(lastCoverId, p)
+            SongMenu.askCoverMode(this) { adapter.refresh() }
+        }
     }
 
     override fun onCreate(s: Bundle?) {

@@ -28,6 +28,12 @@ object SongMenu {
         d.setContentView(v); d.show()
     }
 
+    fun askCoverMode(ctx: Context, done: () -> Unit) {
+        val opts = arrayOf("Poora image (fit)", "Center fill (crop)", "Zoom 1.5x")
+        AlertDialog.Builder(ctx).setTitle("Disc par image kaise dikhe?")
+            .setItems(opts) { _, i -> Store.setCoverMode(i); done() }.show()
+    }
+
     fun pickSleep(ctx: Context) {
         val opts = arrayOf("Off", "5 min", "10 min", "15 min", "30 min", "60 min")
         val vals = intArrayOf(0, 5, 10, 15, 30, 60)

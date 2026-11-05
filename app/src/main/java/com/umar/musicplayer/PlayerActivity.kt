@@ -37,7 +37,10 @@ class PlayerActivity : AppCompatActivity() {
     private val artJob = Handler(Looper.getMainLooper())
 
     private val coverPicker = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null && lastId > 0) ImageUtils.savePicked(this, uri)?.let { Store.setCover(lastId, it); loadArt(lastId) }
+        if (uri != null && lastId > 0) ImageUtils.savePicked(this, uri)?.let { p ->
+            Store.setCover(lastId, p)
+            SongMenu.askCoverMode(this) { loadArt(lastId) }
+        }
     }
 
     override fun onCreate(s: Bundle?) {
@@ -71,7 +74,7 @@ class PlayerActivity : AppCompatActivity() {
         refresh()
     }
 
-    override fun onResume() { super.onResume(); tick.postDelayed(pump, 400); loadBg() }
+    override fun onResume() { super.onResume(); tick.postDelayed(pump, 400); loadBg(); applyRewFwdSize() }
     override fun onPause() { super.onPause(); tick.removeCallbacks(pump) }
     override fun onDestroy() { super.onDestroy() }
 
@@ -80,12 +83,21 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun applyRewFwdSize() {
-        val px = dp(Store.rewFwdSize())
-        for (id in intArrayOf(R.id.rew, R.id.fwd, R.id.rewLabel, R.id.fwdLabel)) {
-            val v = findViewById<View>(id)
+        val dpv = Store.rewFwdSize()
+        val px = dp(dpv)
+        for (id in intArrayOf(R.id.rew, R.id.fwd)) {
+            val v = findViewById<ImageButton>(id)
+            v.scaleType = ImageView.ScaleType.FIT_CENTER
+            val pad = px / 4
+            v.setPadding(pad, pad, pad, pad)
             val lp = v.layoutParams as FrameLayout.LayoutParams
-            lp.width = px; lp.height = px
-            v.layoutParams = lp
+            lp.width = px; lp.height = px; v.layoutParams = lp
+        }
+        for (id in intArrayOf(R.id.rewLabel, R.id.fwdLabel)) {
+            val v = findViewById<TextView>(id)
+            v.textSize = dpv * 0.20f
+            val lp = v.layoutParams as FrameLayout.LayoutParams
+            lp.width = px; lp.height = px; v.layoutParams = lp
         }
     }
 
@@ -126,7 +138,10 @@ class PlayerActivity : AppCompatActivity() {
     private fun loadArt(id: Long) {
         artJob.post {
             val custom = Store.coverFor(id) ?: Store.globalCover()
-            val bmp = if (custom != null) ImageUtils.loadSharp(custom, 512, 512) else ImageUtils.embeddedArt(this, id)
+            val bmp = if (custom != null)
+                ImageUtils.loadSharp(custom, 512, 512)?.let { ImageUtils.prepareSquare(it, Store.coverMode()) }
+            else
+                ImageUtils.embeddedArt(this, id)?.let { ImageUtils.centerCropSquare(it) }
             disc.setArt(bmp)
         }
     }

@@ -2,6 +2,8 @@ package com.umar.musicplayer
 
 import android.content.Context
 import android.graphics.drawable.GradientDrawable
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,6 +11,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import java.util.Collections
+import java.util.concurrent.Executors
 
 class SongAdapter(
     private val numbered: Boolean,
@@ -18,6 +21,8 @@ class SongAdapter(
 
     private var fullList: List<Song> = emptyList()
     private var shownList: MutableList<Song> = mutableListOf()
+    private val mainH = Handler(Looper.getMainLooper())
+    private val exec = Executors.newSingleThreadExecutor()
 
     private val palette = listOf(
         intArrayOf(0xFFFF6B9D.toInt(), 0xFFC44FE2.toInt()),
@@ -51,7 +56,21 @@ class SongAdapter(
         h.artist.text = song.artist.ifBlank { ctx.getString(R.string.unknown_artist) }
         h.num.visibility = if (numbered) View.VISIBLE else View.GONE
         if (numbered) h.num.text = (position + 1).toString()
-        h.thumb.background = makeGradient(ctx, song.title.hashCode())
+
+        val coverPath = Store.coverFor(song.id) ?: Store.globalCover()
+        h.thumb.tag = song.id
+        if (coverPath != null) {
+            h.thumb.background = null
+            h.thumb.setImageBitmap(null)
+            exec.execute {
+                val bmp = ImageUtils.loadSharp(coverPath, 120, 120)?.let { ImageUtils.centerCropSquare(it) }
+                mainH.post { if (h.thumb.tag == song.id) h.thumb.setImageBitmap(bmp) }
+            }
+        } else {
+            h.thumb.setImageBitmap(null)
+            h.thumb.background = makeGradient(ctx, song.title.hashCode())
+        }
+
         h.itemView.setOnClickListener { onSongClick(song, position) }
         h.more.setOnClickListener { onMoreClick(song) }
     }
@@ -63,7 +82,7 @@ class SongAdapter(
     }
     class Holder(v: View) : RecyclerView.ViewHolder(v) {
         val num: TextView = v.findViewById(R.id.num)
-        val thumb: View = v.findViewById(R.id.thumb)
+        val thumb: ImageView = v.findViewById(R.id.thumb)
         val title: TextView = v.findViewById(R.id.title)
         val artist: TextView = v.findViewById(R.id.artist)
         val more: ImageView = v.findViewById(R.id.more)
