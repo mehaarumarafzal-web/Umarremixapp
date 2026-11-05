@@ -12,7 +12,7 @@ import android.util.AttributeSet
 import android.view.View
 
 class VinylDiscView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet? = null, d: Int = 0) : View(ctx, attrs, d) {
-    private var art: Bitmap? = null
+    private var round: Bitmap? = null
     private var playing = false
     private var angle = 0f
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -24,35 +24,46 @@ class VinylDiscView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet?
 
     fun setPlaying(v: Boolean) {
         playing = v
-        if (v) {
-            if (animator.isStarted) animator.resume() else animator.start()
-        } else {
-            if (animator.isStarted) animator.pause()
-        }
+        if (v) { if (animator.isStarted) animator.resume() else animator.start() } else { if (animator.isStarted) animator.pause() }
         invalidate()
     }
-    fun setArt(b: Bitmap?) { art = b; invalidate() }
+
+    fun setArt(b: Bitmap?) {
+        round = b?.let { makeRound(it) }
+        invalidate()
+    }
+
+    private fun makeRound(src: Bitmap): Bitmap? = try {
+        val size = 512
+        val sq = if (src.width == size && src.height == size) src else Bitmap.createScaledBitmap(src, size, size, true)
+        val out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val c = Canvas(out)
+        val p = Paint(Paint.ANTI_ALIAS_FLAG)
+        p.shader = BitmapShader(sq, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        c.drawCircle(size / 2f, size / 2f, size / 2f, p)
+        out
+    } catch (_: Exception) { null }
+
     override fun onDetachedFromWindow() { animator.cancel(); super.onDetachedFromWindow() }
 
     override fun onDraw(canvas: Canvas) {
         val cx = width / 2f; val cy = height / 2f
         val r = minOf(width, height) / 2f - dp(10f)
+        paint.shader = null
         paint.style = Paint.Style.FILL; paint.color = 0xFF121212.toInt(); canvas.drawCircle(cx, cy, r, paint)
         paint.style = Paint.Style.STROKE; paint.strokeWidth = dp(1f); paint.color = 0x22FFFFFF
         var gr = r * 0.95f; while (gr > r * 0.63f) { canvas.drawCircle(cx, cy, gr, paint); gr -= dp(6f) }
         val lr = r * 0.58f
         canvas.save(); canvas.rotate(angle, cx, cy)
-        val a = art
-        if (a != null) {
-            val d = (lr * 2).toInt().coerceAtLeast(1)
-            val sq = Bitmap.createScaledBitmap(a, d, d, true)
-            val cp = Paint(Paint.ANTI_ALIAS_FLAG); cp.shader = BitmapShader(sq, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
-            canvas.drawCircle(cx, cy, lr, cp)
+        val rb = round
+        if (rb != null) {
+            canvas.drawBitmap(rb, cx - lr, cy - lr, paint)
         } else {
-            val gp = Paint(Paint.ANTI_ALIAS_FLAG); gp.shader = RadialGradient(cx, cy, lr, 0xFF7C4DFF.toInt(), 0xFF448AFF.toInt(), Shader.TileMode.CLAMP)
-            canvas.drawCircle(cx, cy, lr, gp)
+            paint.shader = RadialGradient(cx, cy, lr, 0xFF7C4DFF.toInt(), 0xFF448AFF.toInt(), Shader.TileMode.CLAMP)
+            canvas.drawCircle(cx, cy, lr, paint)
+            paint.shader = null
         }
-        paint.shader = null; paint.color = 0xFF121212.toInt(); paint.style = Paint.Style.FILL
+        paint.color = 0xFF121212.toInt(); paint.style = Paint.Style.FILL
         canvas.drawCircle(cx, cy, lr * 0.10f, paint)
         canvas.restore()
     }

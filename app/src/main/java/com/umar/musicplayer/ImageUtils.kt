@@ -37,7 +37,6 @@ object ImageUtils {
         return Bitmap.createBitmap(b, x, y, s, s)
     }
 
-    /** zoom >= 1: center se crop karke zoom; zoom < 1: poora image, kinare black */
     fun prepareWithZoom(b: Bitmap, zoom: Float): Bitmap {
         val z = zoom.coerceIn(0.5f, 3f)
         if (z >= 1f) {
@@ -62,7 +61,8 @@ object ImageUtils {
         BitmapFactory.decodeFile(path, o)
         var s = 1
         while (o.outWidth / s > rw * 2 && o.outHeight / s > rh * 2) s *= 2
-        BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = s })
+        val o2 = BitmapFactory.Options().apply { inSampleSize = s; inPreferredConfig = Bitmap.Config.ARGB_8888 }
+        BitmapFactory.decodeFile(path, o2)
     } catch (_: Exception) { null }
 
     private fun decodeRes(ctx: Context, rw: Int, rh: Int): Bitmap? = try {
@@ -70,7 +70,8 @@ object ImageUtils {
         BitmapFactory.decodeResource(ctx.resources, R.drawable.home_bg, o)
         var s = 1
         while (o.outWidth / s > rw * 2 && o.outHeight / s > rh * 2) s *= 2
-        BitmapFactory.decodeResource(ctx.resources, R.drawable.home_bg, BitmapFactory.Options().apply { inSampleSize = s })
+        val o2 = BitmapFactory.Options().apply { inSampleSize = s; inPreferredConfig = Bitmap.Config.ARGB_8888 }
+        BitmapFactory.decodeResource(ctx.resources, R.drawable.home_bg, o2)
     } catch (_: Exception) { null }
 
     fun embeddedArt(ctx: Context, songId: Long): Bitmap? = try {
@@ -78,6 +79,6 @@ object ImageUtils {
             android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, songId)
         val r = MediaMetadataRetriever(); r.setDataSource(ctx, uri)
         val b = r.embeddedPicture; r.release()
-        if (b != null) BitmapFactory.decodeByteArray(b, 0, b.size) else null
+        if (b != null) BitmapFactory.decodeByteArray(b, 0, b.size, BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.ARGB_8888 }) else null
     } catch (_: Exception) { null }
 }
