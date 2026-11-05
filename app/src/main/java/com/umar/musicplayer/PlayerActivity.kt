@@ -4,6 +4,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
+import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -47,6 +49,7 @@ class PlayerActivity : AppCompatActivity() {
         seek = findViewById(R.id.seek); cur = findViewById(R.id.cur); tot = findViewById(R.id.tot)
         playBtn = findViewById(R.id.play); repBtn = findViewById(R.id.repeat)
 
+        applyRewFwdSize()
         loadBg()
         findViewById<ImageButton>(R.id.expand).setOnClickListener { finish() }
         findViewById<ImageButton>(R.id.theme).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
@@ -68,12 +71,22 @@ class PlayerActivity : AppCompatActivity() {
         refresh()
     }
 
-    override fun onResume() { super.onResume(); tick.postDelayed(pump, 400) }
+    override fun onResume() { super.onResume(); tick.postDelayed(pump, 400); loadBg() }
     override fun onPause() { super.onPause(); tick.removeCallbacks(pump) }
-    override fun onDestroy() { PlayerCtl.unbind(); super.onDestroy() }
+    override fun onDestroy() { super.onDestroy() }
 
     private val pump = object : Runnable {
         override fun run() { softRefresh(); tick.postDelayed(this, 500) }
+    }
+
+    private fun applyRewFwdSize() {
+        val px = dp(Store.rewFwdSize())
+        for (id in intArrayOf(R.id.rew, R.id.fwd, R.id.rewLabel, R.id.fwdLabel)) {
+            val v = findViewById<View>(id)
+            val lp = v.layoutParams as FrameLayout.LayoutParams
+            lp.width = px; lp.height = px
+            v.layoutParams = lp
+        }
     }
 
     private fun loadBg() {
@@ -112,7 +125,7 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun loadArt(id: Long) {
         artJob.post {
-            val custom = Store.coverFor(id)
+            val custom = Store.coverFor(id) ?: Store.globalCover()
             val bmp = if (custom != null) ImageUtils.loadSharp(custom, 512, 512) else ImageUtils.embeddedArt(this, id)
             disc.setArt(bmp)
         }

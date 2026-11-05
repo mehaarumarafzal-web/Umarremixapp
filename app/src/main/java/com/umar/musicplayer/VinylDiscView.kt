@@ -28,11 +28,11 @@ class VinylDiscView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet?
 
     override fun onDraw(canvas: Canvas) {
         val cx = width / 2f; val cy = height / 2f
-        val r = Math.min(width, height) / 2f - dp(10f)
+        val r = minOf(width, height) / 2f - dp(10f)
         paint.style = Paint.Style.FILL; paint.color = 0xFF121212.toInt(); canvas.drawCircle(cx, cy, r, paint)
         paint.style = Paint.Style.STROKE; paint.strokeWidth = dp(1f); paint.color = 0x22FFFFFF
-        var gr = r * 0.93f; while (gr > r * 0.43f) { canvas.drawCircle(cx, cy, gr, paint); gr -= dp(7f) }
-        val lr = r * 0.39f
+        var gr = r * 0.95f; while (gr > r * 0.63f) { canvas.drawCircle(cx, cy, gr, paint); gr -= dp(6f) }
+        val lr = r * 0.58f
         canvas.save(); canvas.rotate(angle, cx, cy)
         val a = art
         if (a != null) {
@@ -45,7 +45,7 @@ class VinylDiscView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet?
             canvas.drawCircle(cx, cy, lr, gp)
         }
         paint.shader = null; paint.color = 0xFF121212.toInt(); paint.style = Paint.Style.FILL
-        canvas.drawCircle(cx, cy, lr * 0.13f, paint)
+        canvas.drawCircle(cx, cy, lr * 0.10f, paint)
         canvas.restore()
     }
 }

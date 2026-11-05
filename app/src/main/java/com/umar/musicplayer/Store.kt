@@ -12,7 +12,6 @@ object Store {
         if (!::sp.isInitialized) sp = ctx.applicationContext.getSharedPreferences("umar", Context.MODE_PRIVATE)
     }
 
-    // ---- favourites ----
     fun favourites(): MutableSet<Long> {
         val s = HashSet<Long>()
         JSONArray(sp.getString("fav", "[]")).let { a -> for (i in 0 until a.length()) s.add(a.getLong(i)) }
@@ -24,7 +23,6 @@ object Store {
         sp.edit().putString("fav", JSONArray(s.toList()).toString()).apply()
     }
 
-    // ---- playlists ----
     fun playlists(): MutableList<Playlist> {
         val list = ArrayList<Playlist>()
         JSONArray(sp.getString("pls", "[]")).let { a ->
@@ -46,8 +44,7 @@ object Store {
         sp.edit().putString("pls", a.toString()).apply()
     }
     fun addPlaylist(name: String): Playlist {
-        val list = playlists()
-        val p = Playlist(System.currentTimeMillis(), name)
+        val list = playlists(); val p = Playlist(System.currentTimeMillis(), name)
         list.add(p); savePls(list); return p
     }
     fun renamePlaylist(id: Long, name: String) {
@@ -63,7 +60,6 @@ object Store {
         val list = playlists(); list.find { it.id == id }?.let { it.songIds.remove(songId) }; savePls(list)
     }
 
-    // ---- cached library (1 baar sync, phir seedha list) ----
     fun library(): List<Song>? {
         val raw = sp.getString("lib", null) ?: return null
         val out = ArrayList<Song>()
@@ -81,11 +77,15 @@ object Store {
         sp.edit().putString("lib", a.toString()).apply()
     }
 
-    // ---- custom background path ----
     fun bgPath(): String? = sp.getString("bg", null)
     fun setBgPath(p: String?) = sp.edit().putString("bg", p).apply()
 
-    // ---- per-song custom cover / renamed title ----
+    fun globalCover(): String? = sp.getString("gcov", null)
+    fun setGlobalCover(p: String?) = sp.edit().putString("gcov", p).apply()
+
+    fun rewFwdSize(): Int = sp.getInt("rfsize", 64)
+    fun setRewFwdSize(v: Int) = sp.edit().putInt("rfsize", v).apply()
+
     fun coverFor(id: Long): String? = sp.getString("cov_$id", null)
     fun setCover(id: Long, p: String?) = sp.edit().putString("cov_$id", p).apply()
     fun titleFor(id: Long, def: String): String = sp.getString("tit_$id", null) ?: def

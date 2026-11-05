@@ -1,5 +1,6 @@
 package com.umar.musicplayer
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.TextView
 import android.widget.Toast
@@ -25,17 +26,22 @@ class PlaylistActivity : AppCompatActivity() {
 
     override fun onCreate(s: Bundle?) {
         super.onCreate(s)
-        Store.init(this); Library.ensureLoaded(this)
+        Store.init(this); Library.ensureLoaded(this); PlayerCtl.bind(this)
         pid = intent.getLongExtra("pid", -1L)
         setContentView(R.layout.activity_playlist)
-        val title = findViewById<TextView>(R.id.plTitle)
         adapter = SongAdapter(false,
-            { _, pos -> val list = songs(); if (list.isNotEmpty()) { PlayerCtl.playSongs(list, pos, false); } },
+            { _, pos ->
+                val list = songs()
+                if (list.isNotEmpty()) {
+                    PlayerCtl.playSongs(list, pos, false)
+                    startActivity(Intent(this, PlayerActivity::class.java))
+                }
+            },
             { song -> SongMenu.show(this, song, false, { id -> lastCoverId = id; coverPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, { refresh() }) }
         )
         val rv = findViewById<RecyclerView>(R.id.recycler); rv.layoutManager = LinearLayoutManager(this); rv.adapter = adapter
         findViewById<AppCompatImageButton>(R.id.back).setOnClickListener { finish() }
-        findViewById<AppCompatImageButton>(R.id.plMore).setOnClickListener { showMenu(title) }
+        findViewById<AppCompatImageButton>(R.id.plMore).setOnClickListener { showMenu() }
         refresh()
     }
 
@@ -50,12 +56,12 @@ class PlaylistActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.plTitle).text = p?.name ?: ""
         adapter.submit(songs())
     }
-    private fun showMenu(title: TextView) {
+    private fun showMenu() {
         val opts = arrayOf(getString(R.string.add_songs), getString(R.string.rename), getString(R.string.delete))
         AlertDialog.Builder(this).setItems(opts) { _, i ->
             when (i) {
                 0 -> addSongs()
-                1 -> rename(title)
+                1 -> rename()
                 2 -> { Store.deletePlaylist(pid); finish() }
             }
         }.show()
@@ -73,10 +79,11 @@ class PlaylistActivity : AppCompatActivity() {
                 refresh()
             }.setNegativeButton(R.string.cancel, null).show()
     }
-    private fun rename(title: TextView) {
-        val e = android.widget.EditText(this); e.setText(title.text)
+    private fun rename() {
+        val cur = findViewById<TextView>(R.id.plTitle)
+        val e = android.widget.EditText(this); e.setText(cur.text)
         AlertDialog.Builder(this).setTitle(R.string.rename).setView(e)
-            .setPositiveButton(R.string.save) { _, _ -> Store.renamePlaylist(pid, e.text.toString().ifBlank { title.text.toString() }); refresh() }
+            .setPositiveButton(R.string.save) { _, _ -> Store.renamePlaylist(pid, e.text.toString().ifBlank { cur.text.toString() }); refresh() }
             .setNegativeButton(R.string.cancel, null).show()
     }
 }

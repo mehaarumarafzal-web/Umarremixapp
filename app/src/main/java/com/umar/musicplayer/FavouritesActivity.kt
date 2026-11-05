@@ -1,5 +1,6 @@
 package com.umar.musicplayer
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,10 +22,16 @@ class FavouritesActivity : AppCompatActivity() {
 
     override fun onCreate(s: Bundle?) {
         super.onCreate(s)
-        Store.init(this); Library.ensureLoaded(this)
+        Store.init(this); Library.ensureLoaded(this); PlayerCtl.bind(this)
         setContentView(R.layout.activity_favourites)
         adapter = SongAdapter(false,
-            { _, pos -> val list = favSongs(); if (list.isNotEmpty()) PlayerCtl.playSongs(list, pos, false) },
+            { _, pos ->
+                val list = favSongs()
+                if (list.isNotEmpty()) {
+                    PlayerCtl.playSongs(list, pos, false)
+                    startActivity(Intent(this, PlayerActivity::class.java))
+                }
+            },
             { song -> SongMenu.show(this, song, false, { id -> lastCoverId = id; coverPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, { refresh() }) }
         )
         val rv = findViewById<RecyclerView>(R.id.recycler); rv.layoutManager = LinearLayoutManager(this); rv.adapter = adapter

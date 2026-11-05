@@ -113,6 +113,7 @@ class MainActivity : AppCompatActivity() {
         adapter.submit(Library.songs)
         updateCounts()
         updateMini()
+        loadHomeBg()
     }
 
     override fun onDestroy() { PlayerCtl.unbind(); super.onDestroy() }
@@ -164,7 +165,7 @@ class MainActivity : AppCompatActivity() {
         miniPlay.setImageResource(if (PlayerCtl.isPlaying()) R.drawable.ic_pause else R.drawable.ic_play)
         val id = song.id
         artJob.post {
-            val custom = Store.coverFor(id)
+            val custom = Store.coverFor(id) ?: Store.globalCover()
             val bmp = if (custom != null) ImageUtils.loadSharp(custom, 96, 96) else ImageUtils.embeddedArt(this, id)
             if (bmp != null) miniThumb.setImageBitmap(bmp)
         }
