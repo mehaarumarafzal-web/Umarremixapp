@@ -57,7 +57,7 @@ class SongAdapter(
     }
     private fun makeGradient(ctx: Context, seed: Int): GradientDrawable {
         val c = palette[Math.floorMod(seed, palette.size)]
-        val d = GradientDrawable(GradientDrawable.Orientation.TOP_LEFT_TO_BOTTOM_RIGHT, c)
+        val d = GradientDrawable(GradientDrawable.Orientation.TL_BR, c)
         d.cornerRadius = 14f * ctx.resources.displayMetrics.density
         return d
     }
