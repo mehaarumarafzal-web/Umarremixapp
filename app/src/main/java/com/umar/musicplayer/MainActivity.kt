@@ -112,6 +112,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        PlayerCtl.onChange = { updateMini(); adapter.refresh() }
         Library.ensureLoaded(this)
         adapter.submit(Library.songs)
         updateCounts()

@@ -1,6 +1,7 @@
 package com.umar.musicplayer
 
 import androidx.media3.common.Player
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -12,7 +13,9 @@ class PlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        val p = ExoPlayer.Builder(this).build().apply {
+        VoiceFx.load(this)
+        val rf = DefaultRenderersFactory(this).setAudioProcessors(VoiceFx.processor)
+        val p = ExoPlayer.Builder(this, rf).build().apply {
             playWhenReady = false
             repeatMode = Player.REPEAT_MODE_OFF
         }

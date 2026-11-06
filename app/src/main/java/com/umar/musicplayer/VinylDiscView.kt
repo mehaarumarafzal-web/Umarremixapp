@@ -50,10 +50,12 @@ class VinylDiscView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet?
         val cx = width / 2f; val cy = height / 2f
         val r = minOf(width, height) / 2f - dp(10f)
         paint.shader = null
+        paint.alpha = 255
         paint.style = Paint.Style.FILL; paint.color = 0xFF121212.toInt(); canvas.drawCircle(cx, cy, r, paint)
         paint.style = Paint.Style.STROKE; paint.strokeWidth = dp(1f); paint.color = 0x22FFFFFF
         var gr = r * 0.95f; while (gr > r * 0.63f) { canvas.drawCircle(cx, cy, gr, paint); gr -= dp(6f) }
         val lr = r * 0.58f
+        paint.alpha = 255
         canvas.save(); canvas.rotate(angle, cx, cy)
         val rb = round
         if (rb != null) {
