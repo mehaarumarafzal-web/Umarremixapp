@@ -10,9 +10,9 @@ import kotlin.math.abs
 import kotlin.math.min
 
 /**
- * Just Music / Just Lyrics — universal audio processor adapter.
- * Compile-time par media3 ki kisi class par depend nahi (is liye compile error namumkin).
- * Runtime par media3 ka AudioProcessor interface dhoond kar proxy se jud jata hai.
+ * Just Music / Just Lyrics — universal audio processor adapter (final).
+ * Compile-time par media3 ki kisi audio-class par depend nahi (compile error namumkin).
+ * Runtime par media3 ka AudioProcessor interface dhoond kar proxy se judta hai.
  * mode: 0 = normal, 1 = just music (vocal hataya), 2 = just lyrics (sirf awaaz)
  */
 object VoiceFx {
@@ -52,6 +52,7 @@ object VoiceFx {
     private class Handler : InvocationHandler {
         private var out: ByteBuffer = ByteBuffer.allocate(0)
         private var stereo16 = false
+        private var eos = false
         private var lastFmt: Any? = null
 
         override fun invoke(proxy: Any, method: Method, args: Array<Any?>?): Any? {
@@ -60,9 +61,11 @@ object VoiceFx {
                 "configure", "onConfigure" -> {
                     val fmt = a.getOrNull(0)
                     lastFmt = fmt
-                    stereo16 = readInt(fmt, "channelCount") == 2 &&
-                            (readInt(fmt, "pcmEncoding") == PCM_16BIT || readInt(fmt, "encoding") == PCM_16BIT)
+                    val ch = readInt(fmt, "channelCount")
+                    val enc = readInt(fmt, "pcmEncoding").let { if (it == -1) readInt(fmt, "encoding") else it }
+                    stereo16 = ch == 2 && (enc == -1 || enc == PCM_16BIT)
                     out = ByteBuffer.allocate(0)
+                    eos = false
                     fmt
                 }
                 "isActive" -> true
@@ -76,10 +79,11 @@ object VoiceFx {
                         while (input.remaining() >= 4) {
                             val l = input.short.toInt()
                             val r = input.short.toInt()
+                            // center (vocal) ka andaza: jab dono channels same disha mein hon
                             val c = if ((l > 0) == (r > 0)) min(abs(l), abs(r)) else 0
                             val v = when (mode) {
-                                1 -> ((l - c) + (r - c)) / 2
-                                2 -> c
+                                1 -> ((l - c) + (r - c)) / 2   // vocal kata hua (instrumental)
+                                2 -> c                          // sirf vocal
                                 else -> (l + r) / 2
                             }
                             val s = v.coerceIn(-32768, 32767).toShort()
@@ -92,11 +96,11 @@ object VoiceFx {
                     out = buf
                     null
                 }
-                "queueEndOfStream" -> null
+                "queueEndOfStream" -> { eos = true; null }
                 "getOutput" -> { val b = out; out = ByteBuffer.allocate(0); b }
-                "isEnded" -> false
-                "flush" -> { out = ByteBuffer.allocate(0); null }
-                "reset" -> { out = ByteBuffer.allocate(0); null }
+                "isEnded" -> eos && out.remaining() == 0
+                "flush" -> { out = ByteBuffer.allocate(0); eos = false; null }
+                "reset" -> { out = ByteBuffer.allocate(0); eos = false; null }
                 "toString" -> "VoiceProcessorProxy"
                 "hashCode" -> System.identityHashCode(proxy)
                 "equals" -> proxy === a.getOrNull(0)
