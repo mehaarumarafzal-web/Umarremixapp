@@ -10,8 +10,8 @@ import kotlin.math.abs
 import kotlin.math.min
 
 /**
- * Just Music / Just Lyrics — FINAL v3.
- * Processor ab DefaultAudioSink.Builder par attach hota hai (jahan media3 1.4 mein woh hota hai).
+ * Just Music / Just Lyrics — FINAL v4 (deep-scan attach).
+ * Public methods, protected/private methods, aur fields — sab scan hota hai.
  * mode: 0 = normal, 1 = just music (vocal hataya), 2 = just lyrics (sirf awaaz)
  */
 object VoiceFx {
@@ -36,24 +36,57 @@ object VoiceFx {
         }
     }
 
-    /** Audio sink banata hai jisme vocal processor juda hai. Fail ho to null (app normal chalti rahe). */
-    fun buildSinkWithProcessor(context: Context): Any? = runCatching {
-        val builderClass = Class.forName("androidx.media3.exoplayer.audio.DefaultAudioSink\$Builder")
-        val builder = builderClass.getConstructor(Context::class.java).newInstance(context)
-        val m = builderClass.methods.firstOrNull { it.name == "setAudioProcessors" && it.parameterTypes.size == 1 }
-        if (m == null) { trace = "builder-no-method"; return null }
-        val pt = m.parameterTypes[0]
-        val iface = if (pt.isArray) pt.componentType else pt
-        if (iface == null || !iface.isInterface) { trace = "bad-param:" + pt.name; return null }
-        val proxy = Proxy.newProxyInstance(iface.classLoader, arrayOf(iface), Handler())
-        val arr = java.lang.reflect.Array.newInstance(iface, 1)
-        java.lang.reflect.Array.set(arr, 0, proxy)
-        m.invoke(builder, arr)
-        attached = true
-        trace = "ok:" + iface.simpleName
-        builderClass.methods.firstOrNull { it.name == "build" && it.parameterTypes.isEmpty() }
-            ?.invoke(builder)
-    }.getOrNull()
+    /** Factory ke andar processor ghusata hai — method ya field, jo bhi mile. */
+    fun attachTo(factory: Any): Boolean {
+        trace = "start"
+        try {
+            // 1) declared methods (public/protected/private), superclass chain
+            var cls: Class<*>? = factory.javaClass
+            while (cls != null && cls != Any::class.java) {
+                for (m in cls.declaredMethods) {
+                    if (!m.name.contains("AudioProcessor", ignoreCase = true)) continue
+                    if (m.parameterTypes.size != 1) continue
+                    val pt = m.parameterTypes[0]
+                    val iface = if (pt.isArray) pt.componentType else if (pt.isInterface) pt else null
+                    if (iface == null || !iface.isInterface) continue
+                    m.isAccessible = true
+                    val proxy = Proxy.newProxyInstance(iface.classLoader, arrayOf(iface), Handler())
+                    val arr = java.lang.reflect.Array.newInstance(iface, 1)
+                    java.lang.reflect.Array.set(arr, 0, proxy)
+                    m.invoke(factory, arr)
+                    attached = true
+                    trace = "ok-method:" + m.name
+                    return true
+                }
+                cls = cls.superclass
+            }
+            // 2) declared fields (AudioProcessor[] type), superclass chain
+            cls = factory.javaClass
+            while (cls != null && cls != Any::class.java) {
+                for (f in cls.declaredFields) {
+                    val ft = f.type
+                    if (!ft.isArray) continue
+                    val comp = ft.componentType
+                    if (comp == null || !comp.isInterface) continue
+                    if (!comp.simpleName.contains("AudioProcessor")) continue
+                    f.isAccessible = true
+                    val proxy = Proxy.newProxyInstance(comp.classLoader, arrayOf(comp), Handler())
+                    val arr = java.lang.reflect.Array.newInstance(comp, 1)
+                    java.lang.reflect.Array.set(arr, 0, proxy)
+                    f.set(factory, arr)
+                    attached = true
+                    trace = "ok-field:" + f.name
+                    return true
+                }
+                cls = cls.superclass
+            }
+            trace = "nothing-found"
+            return false
+        } catch (t: Throwable) {
+            trace = "err:" + (t.message ?: t.javaClass.simpleName)
+            return false
+        }
+    }
 
     private const val PCM_16BIT = 2 // C.ENCODING_PCM_16BIT
 

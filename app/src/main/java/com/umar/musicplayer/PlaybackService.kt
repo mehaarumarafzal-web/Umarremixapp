@@ -15,12 +15,8 @@ class PlaybackService : MediaSessionService() {
         super.onCreate()
         VoiceFx.load(this)
         val rf = DefaultRenderersFactory(this)
-        val builder = ExoPlayer.Builder(this, rf)
-        val sink = VoiceFx.buildSinkWithProcessor(this)
-        if (sink != null) {
-            builder.setAudioSink(sink as androidx.media3.exoplayer.audio.AudioSink)
-        }
-        val p = builder.build()
+        runCatching { VoiceFx.attachTo(rf) }
+        val p = ExoPlayer.Builder(this, rf).build()
         p.playWhenReady = false
         p.repeatMode = Player.REPEAT_MODE_OFF
         player = p
