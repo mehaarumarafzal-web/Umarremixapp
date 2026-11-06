@@ -1,8 +1,8 @@
 package com.umar.musicplayer
 
 import android.content.Context
-import androidx.media3.common.AudioFormat
-import androidx.media3.decoder.BaseAudioProcessor
+import androidx.media3.exoplayer.audio.AudioFormat
+import androidx.media3.exoplayer.audio.BaseAudioProcessor
 import java.nio.ByteBuffer
 import kotlin.math.abs
 import kotlin.math.min
