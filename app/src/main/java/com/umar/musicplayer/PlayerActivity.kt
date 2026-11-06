@@ -12,7 +12,6 @@ import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -148,23 +147,11 @@ class PlayerActivity : AppCompatActivity() {
         val d = BottomSheetDialog(this)
         val v = layoutInflater.inflate(R.layout.sheet_player_menu, null)
         v.findViewById<TextView>(R.id.pTrim).setOnClickListener { d.dismiss(); PlayerCtl.currentSong()?.let { SongMenu.openTrimDialog(this, it) } }
-        v.findViewById<TextView>(R.id.pVoice).setOnClickListener { d.dismiss(); voiceDialog() }
         v.findViewById<TextView>(R.id.pSpeed).setOnClickListener { d.dismiss(); SongMenu.pickSpeed(this) }
         v.findViewById<TextView>(R.id.pSleep).setOnClickListener { d.dismiss(); SongMenu.pickSleep(this) }
         v.findViewById<TextView>(R.id.pCover).setOnClickListener { d.dismiss(); PlayerCtl.currentSong()?.let { lastId = it.id; coverPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) } }
         v.findViewById<TextView>(R.id.pShare).setOnClickListener { d.dismiss(); PlayerCtl.currentSong()?.let { shareIt(it.id) } }
         d.setContentView(v); d.show()
-    }
-
-    private fun voiceDialog() {
-        val opts = arrayOf("Normal (poora song)", "Just music (vocal hataya)", "Just lyrics (sirf awaaz)")
-        AlertDialog.Builder(this).setTitle("Music / Lyrics mode")
-            .setSingleChoiceItems(opts, Store.voiceMode()) { dlg, i ->
-                VoiceFx.set(this, i)
-                dlg.dismiss()
-                android.widget.Toast.makeText(this, opts[i], android.widget.Toast.LENGTH_SHORT).show()
-            }
-            .show()
     }
 
     private fun shareIt(id: Long) {
