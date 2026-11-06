@@ -14,11 +14,11 @@ class PlaybackService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
         VoiceFx.load(this)
-        val rf = DefaultRenderersFactory(this).setAudioProcessors(VoiceFx.processor)
-        val p = ExoPlayer.Builder(this, rf).build().apply {
-            playWhenReady = false
-            repeatMode = Player.REPEAT_MODE_OFF
-        }
+        val rf = DefaultRenderersFactory(this)
+        rf.setAudioProcessors(VoiceFx.processor)
+        val p = ExoPlayer.Builder(this, rf).build()
+        p.playWhenReady = false
+        p.repeatMode = Player.REPEAT_MODE_OFF
         player = p
         session = MediaSession.Builder(this, p)
             .setCallback(object : MediaSession.Callback {

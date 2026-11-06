@@ -1,9 +1,11 @@
 package com.umar.musicplayer
 
 import android.content.Context
-import androidx.media3.common.BaseAudioProcessor
-import androidx.media3.common.Format
+import androidx.media3.common.AudioFormat
+import androidx.media3.decoder.BaseAudioProcessor
 import java.nio.ByteBuffer
+import kotlin.math.abs
+import kotlin.math.min
 
 /**
  * mode 0 = normal, 1 = just music (vocal hataya), 2 = just lyrics (sirf awaaz)
@@ -14,8 +16,8 @@ class VoiceProcessor : BaseAudioProcessor() {
     @Volatile var mode: Int = 0
     private var passthrough = false
 
-    override fun onConfigure(inputAudioFormat: Format): Format {
-        passthrough = inputAudioFormat.encoding != Format.ENCODING_PCM_16BIT || inputAudioFormat.channelCount != 2
+    override fun onConfigure(inputAudioFormat: AudioFormat): AudioFormat {
+        passthrough = inputAudioFormat.encoding != AudioFormat.ENCODING_PCM_16BIT || inputAudioFormat.channelCount != 2
         return inputAudioFormat
     }
 
@@ -30,7 +32,7 @@ class VoiceProcessor : BaseAudioProcessor() {
         while (inputBuffer.remaining() >= 4) {
             val l = inputBuffer.short.toInt()
             val r = inputBuffer.short.toInt()
-            val c = if ((l > 0) == (r > 0)) minOf(kotlin.math.abs(l), kotlin.math.abs(r)) else 0
+            val c = if ((l > 0) == (r > 0)) min(abs(l), abs(r)) else 0
             val v = when (mode) {
                 1 -> ((l - c) + (r - c)) / 2
                 2 -> c
