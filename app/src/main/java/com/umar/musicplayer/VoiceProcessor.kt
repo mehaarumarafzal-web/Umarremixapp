@@ -10,15 +10,16 @@ import kotlin.math.abs
 import kotlin.math.min
 
 /**
- * Just Music / Just Lyrics — universal audio processor (FINAL).
- * Interface ka naam guess nahi hota: setAudioProcessors(...) ke parameter type
- * se khud mil jata hai, is liye attach kabhi fail nahi hota.
+ * Just Music / Just Lyrics — universal audio processor (FINAL v2).
+ * Attach ke 2 strategy (array / list) + fail hone par exact reason trace.
  * mode: 0 = normal, 1 = just music (vocal hataya), 2 = just lyrics (sirf awaaz)
  */
 object VoiceFx {
 
     @Volatile var mode: Int = 0
     @Volatile var attached: Boolean = false
+        private set
+    @Volatile var trace: String = "-"
         private set
 
     fun load(ctx: Context) {
@@ -31,24 +32,66 @@ object VoiceFx {
         Store.setVoiceMode(m)
         mode = m
         if (!attached) {
-            android.widget.Toast.makeText(ctx, "Voice processor attach nahi hua - is device par mode apply nahi hoga", android.widget.Toast.LENGTH_LONG).show()
+            android.widget.Toast.makeText(
+                ctx,
+                "Attach fail: $trace",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
         }
     }
 
-    /** Factory ke setAudioProcessors ke parameter type se interface lekar proxy jodta hai. */
-    fun attachTo(factory: Any): Boolean = runCatching {
-        val m = factory.javaClass.methods.firstOrNull { it.name == "setAudioProcessors" && it.parameterTypes.size == 1 }
-            ?: return false
-        val paramType = m.parameterTypes[0]
-        val iface = if (paramType.isArray) paramType.componentType else paramType
-        if (iface == null || !iface.isInterface) return false
-        val proxy = Proxy.newProxyInstance(iface.classLoader, arrayOf(iface), Handler())
-        val arr = java.lang.reflect.Array.newInstance(iface, 1)
-        java.lang.reflect.Array.set(arr, 0, proxy)
-        m.invoke(factory, arr)
-        attached = true
-        true
-    }.getOrDefault(false)
+    /** Factory par processor jodo — array ya list, jo bhi version ho. */
+    fun attachTo(factory: Any): Boolean {
+        trace = "start"
+        try {
+            val ms = factory.javaClass.methods.filter { it.name == "setAudioProcessors" }
+            if (ms.isEmpty()) { trace = "no-method"; return false }
+            for (m in ms) {
+                if (m.parameterTypes.size != 1) continue
+                val pt = m.parameterTypes[0]
+
+                // Strategy 1: setAudioProcessors(AudioProcessor...)
+                if (pt.isArray && pt.componentType.isInterface) {
+                    val iface = pt.componentType
+                    val proxy = Proxy.newProxyInstance(iface.classLoader, arrayOf(iface), Handler())
+                    val arr = java.lang.reflect.Array.newInstance(iface, 1)
+                    java.lang.reflect.Array.set(arr, 0, proxy)
+                    m.invoke(factory, arr)
+                    attached = true
+                    trace = "ok-array:" + iface.simpleName
+                    return true
+                }
+
+                // Strategy 2: setAudioProcessors(List<AudioProcessor>)
+                if (java.util.List::class.java.isAssignableFrom(pt)) {
+                    val comp = guessComponent(factory) ?: continue
+                    val proxy = Proxy.newProxyInstance(comp.classLoader, arrayOf(comp), Handler())
+                    val list = java.util.ArrayList<Any>()
+                    list.add(proxy)
+                    m.invoke(factory, list)
+                    attached = true
+                    trace = "ok-list:" + comp.simpleName
+                    return true
+                }
+            }
+            trace = "no-match:" + ms.joinToString("; ") { it.parameterTypes.contentToString() }
+            return false
+        } catch (t: Throwable) {
+            trace = "err:" + (t.message ?: t.javaClass.simpleName)
+            return false
+        }
+    }
+
+    /** List<AudioProcessor> ke andar ka interface generic signature se nikalta hai. */
+    private fun guessComponent(factory: Any): Class<*>? {
+        for (m in factory.javaClass.methods) {
+            if (m.name != "setAudioProcessors") continue
+            val gt = m.genericParameterTypes.firstOrNull() as? java.lang.reflect.ParameterizedType ?: continue
+            val ta = gt.actualTypeArguments.firstOrNull()
+            if (ta is Class<*> && ta.isInterface) return ta
+        }
+        return null
+    }
 
     private const val PCM_16BIT = 2 // C.ENCODING_PCM_16BIT
 
@@ -98,7 +141,6 @@ object VoiceFx {
                 "hashCode" -> System.identityHashCode(proxy)
                 "equals" -> proxy === a.getOrNull(0)
                 else -> {
-                    // koi bhi configure-jaisi method (naam jo bhi ho) pakdo
                     if (a.size == 1 && a[0] != null && method.returnType.isInstance(a[0])) {
                         applyConfigure(a[0]); a[0]
                     } else if (lastFmt != null && method.returnType.isInstance(lastFmt)) {
