@@ -15,7 +15,7 @@ class PlaybackService : MediaSessionService() {
         super.onCreate()
         VoiceFx.load(this)
         val rf = DefaultRenderersFactory(this)
-        rf.setAudioProcessors(VoiceFx.processor)
+        runCatching { VoiceFx.attachTo(rf) }
         val p = ExoPlayer.Builder(this, rf).build()
         p.playWhenReady = false
         p.repeatMode = Player.REPEAT_MODE_OFF
