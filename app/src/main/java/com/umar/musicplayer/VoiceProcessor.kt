@@ -10,8 +10,8 @@ import kotlin.math.abs
 import kotlin.math.min
 
 /**
- * Just Music / Just Lyrics — universal audio processor (FINAL v2).
- * Attach ke 2 strategy (array / list) + fail hone par exact reason trace.
+ * Just Music / Just Lyrics — FINAL v3.
+ * Processor ab DefaultAudioSink.Builder par attach hota hai (jahan media3 1.4 mein woh hota hai).
  * mode: 0 = normal, 1 = just music (vocal hataya), 2 = just lyrics (sirf awaaz)
  */
 object VoiceFx {
@@ -32,66 +32,28 @@ object VoiceFx {
         Store.setVoiceMode(m)
         mode = m
         if (!attached) {
-            android.widget.Toast.makeText(
-                ctx,
-                "Attach fail: $trace",
-                android.widget.Toast.LENGTH_LONG
-            ).show()
+            android.widget.Toast.makeText(ctx, "Attach fail: $trace", android.widget.Toast.LENGTH_LONG).show()
         }
     }
 
-    /** Factory par processor jodo — array ya list, jo bhi version ho. */
-    fun attachTo(factory: Any): Boolean {
-        trace = "start"
-        try {
-            val ms = factory.javaClass.methods.filter { it.name == "setAudioProcessors" }
-            if (ms.isEmpty()) { trace = "no-method"; return false }
-            for (m in ms) {
-                if (m.parameterTypes.size != 1) continue
-                val pt = m.parameterTypes[0]
-
-                // Strategy 1: setAudioProcessors(AudioProcessor...)
-                if (pt.isArray && pt.componentType.isInterface) {
-                    val iface = pt.componentType
-                    val proxy = Proxy.newProxyInstance(iface.classLoader, arrayOf(iface), Handler())
-                    val arr = java.lang.reflect.Array.newInstance(iface, 1)
-                    java.lang.reflect.Array.set(arr, 0, proxy)
-                    m.invoke(factory, arr)
-                    attached = true
-                    trace = "ok-array:" + iface.simpleName
-                    return true
-                }
-
-                // Strategy 2: setAudioProcessors(List<AudioProcessor>)
-                if (java.util.List::class.java.isAssignableFrom(pt)) {
-                    val comp = guessComponent(factory) ?: continue
-                    val proxy = Proxy.newProxyInstance(comp.classLoader, arrayOf(comp), Handler())
-                    val list = java.util.ArrayList<Any>()
-                    list.add(proxy)
-                    m.invoke(factory, list)
-                    attached = true
-                    trace = "ok-list:" + comp.simpleName
-                    return true
-                }
-            }
-            trace = "no-match:" + ms.joinToString("; ") { it.parameterTypes.contentToString() }
-            return false
-        } catch (t: Throwable) {
-            trace = "err:" + (t.message ?: t.javaClass.simpleName)
-            return false
-        }
-    }
-
-    /** List<AudioProcessor> ke andar ka interface generic signature se nikalta hai. */
-    private fun guessComponent(factory: Any): Class<*>? {
-        for (m in factory.javaClass.methods) {
-            if (m.name != "setAudioProcessors") continue
-            val gt = m.genericParameterTypes.firstOrNull() as? java.lang.reflect.ParameterizedType ?: continue
-            val ta = gt.actualTypeArguments.firstOrNull()
-            if (ta is Class<*> && ta.isInterface) return ta
-        }
-        return null
-    }
+    /** Audio sink banata hai jisme vocal processor juda hai. Fail ho to null (app normal chalti rahe). */
+    fun buildSinkWithProcessor(context: Context): Any? = runCatching {
+        val builderClass = Class.forName("androidx.media3.exoplayer.audio.DefaultAudioSink\$Builder")
+        val builder = builderClass.getConstructor(Context::class.java).newInstance(context)
+        val m = builderClass.methods.firstOrNull { it.name == "setAudioProcessors" && it.parameterTypes.size == 1 }
+        if (m == null) { trace = "builder-no-method"; return null }
+        val pt = m.parameterTypes[0]
+        val iface = if (pt.isArray) pt.componentType else pt
+        if (iface == null || !iface.isInterface) { trace = "bad-param:" + pt.name; return null }
+        val proxy = Proxy.newProxyInstance(iface.classLoader, arrayOf(iface), Handler())
+        val arr = java.lang.reflect.Array.newInstance(iface, 1)
+        java.lang.reflect.Array.set(arr, 0, proxy)
+        m.invoke(builder, arr)
+        attached = true
+        trace = "ok:" + iface.simpleName
+        builderClass.methods.firstOrNull { it.name == "build" && it.parameterTypes.isEmpty() }
+            ?.invoke(builder)
+    }.getOrNull()
 
     private const val PCM_16BIT = 2 // C.ENCODING_PCM_16BIT
 
