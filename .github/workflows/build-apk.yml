@@ -13,10 +13,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 22
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -34,29 +34,32 @@ jobs:
       - name: Accept Android Licenses
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
 
-      - name: Install Capacitor Packages
+      - name: Prepare www folder
+        run: |
+          mkdir -p www
+          cp index.html style.css script.js manifest.json sw.js www/
+
+      - name: Install Capacitor 6
         run: |
           npm init -y
-          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
 
-      - name: Create Capacitor Config Manually
+      - name: Create Capacitor Config
         run: |
           cat > capacitor.config.json << 'EOF'
           {
             "appId": "com.nahi.remixapp",
             "appName": "Remix Studio",
-            "webDir": ".",
-            "bundledWebRuntime": false
+            "webDir": "www"
           }
           EOF
 
       - name: Add Android Platform
         run: npx cap add android
 
-      - name: Copy Web Assets to Android
-        run: npx cap copy android
+      - name: Sync Android
+        run: npx cap sync android
 
       - name: Build Debug APK
         run: |
