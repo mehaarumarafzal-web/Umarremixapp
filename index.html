@@ -2,119 +2,117 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎵 Remix Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nahi's Remix Studio</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="theme-color" content="#0a0a0f">
+    <link rel="icon" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 
-<div class="container">
-    <h1>🎵 Remix Studio</h1>
+<div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+        <h1><i class="fa-solid fa-headphones"></i> Remix Studio</h1>
+        <p>Hold effects to remix your music</p>
+    </header>
 
-    <div class="header-bar">
-        <button onclick="saveProject()">💾 Save</button>
-        <button onclick="loadProject()">📂 Load</button>
-        <button onclick="exportAudio()">⬇️ Export</button>
-        <button onclick="undoAction()">↶ Undo</button>
-        <button onclick="redoAction()">↷ Redo</button>
-        <button onclick="resetAll()">🔄 Reset</button>
-    </div>
-
-    <div class="song-section">
-        <button class="add-song-btn" onclick="document.getElementById('songInput').click()">
-            + Add Song (MP3/WAV)
+    <!-- Song Import -->
+    <section class="song-section">
+        <input type="file" id="audioFile" accept="audio/*" hidden>
+        <button onclick="document.getElementById('audioFile').click()" class="btn-primary">
+            <i class="fa-solid fa-folder-open"></i> Choose Song
         </button>
-        <input type="file" id="songInput" accept="audio/*" style="display:none" onchange="loadSong(event)">
-        <div class="song-info" id="songInfo">No song loaded</div>
+        <p id="fileName" class="file-name">No song selected</p>
+    </section>
 
-        <div class="waveform-container">
-            <canvas id="waveformCanvas"></canvas>
-            <div class="playhead" id="playhead"></div>
+    <!-- Visualizer -->
+    <canvas id="visualizer"></canvas>
+
+    <!-- Player Controls -->
+    <section class="player-section">
+        <div class="time-display">
+            <span id="currentTime">0:00</span>
+            <span id="duration">0:00</span>
         </div>
+        <input type="range" id="seekBar" min="0" max="100" value="0" class="seek-bar">
+        <div class="player-buttons">
+            <button id="playBtn" class="btn-control" disabled>
+                <i class="fa-solid fa-play"></i>
+            </button>
+            <button id="stopBtn" class="btn-control" disabled>
+                <i class="fa-solid fa-stop"></i>
+            </button>
+        </div>
+    </section>
 
-        <div class="time-display" id="timeDisplay">0:00 / 0:00</div>
+    <!-- Remix Effects Grid -->
+    <section class="effects-section">
+        <h2><i class="fa-solid fa-sliders"></i> Remix Effects <span class="hint">(Hold to Apply)</span></h2>
+        <div class="effects-grid" id="effectsGrid">
+            <!-- Effects will be added by JS -->
+        </div>
+    </section>
 
-        <div class="timeline-wrapper">
-            <div class="timeline-label">📍 Timeline — tap/drag to add effect blocks</div>
-            <div class="timeline" id="timeline"></div>
-            <div class="timeline-controls">
-                <button class="timeline-btn" onclick="openBlockModal()">+ Add Block</button>
-                <button class="timeline-btn" id="loopBtn" onclick="toggleLoop()">🔁 Loop: OFF</button>
-                <button class="timeline-btn" onclick="previewAll()">👁 Preview</button>
+    <!-- Customization Sliders -->
+    <section class="customize-section" id="customizeSection" style="display:none;">
+        <h2><i class="fa-solid fa-sliders"></i> Customize: <span id="activeEffectName">Bass</span></h2>
+        <div class="slider-group">
+            <label>Intensity</label>
+            <input type="range" id="intensitySlider" min="0" max="100" value="70">
+            <span id="intensityValue">70%</span>
+        </div>
+        <div class="slider-group">
+            <label>Volume</label>
+            <input type="range" id="volumeSlider" min="0" max="100" value="80">
+            <span id="volumeValue">80%</span>
+        </div>
+        <div class="slider-group">
+            <label>Frequency</label>
+            <input type="range" id="freqSlider" min="20" max="2000" value="100">
+            <span id="freqValue">100 Hz</span>
+        </div>
+    </section>
+
+    <!-- Sound Library -->
+    <section class="sounds-section">
+        <h2><i class="fa-solid fa-music"></i> Sound Library</h2>
+        <div class="sounds-grid" id="soundsGrid">
+            <!-- Sounds will be added by JS -->
+        </div>
+        <input type="file" id="customSound" accept="audio/*" hidden>
+        <button onclick="document.getElementById('customSound').click()" class="btn-secondary">
+            <i class="fa-solid fa-plus"></i> Upload Your Sound
+        </button>
+    </section>
+
+    <!-- Export Section -->
+    <section class="export-section">
+        <button id="exportBtn" class="btn-export" disabled>
+            <i class="fa-solid fa-download"></i> Export as MP3
+        </button>
+        <div id="exportProgress" class="export-progress" style="display:none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
             </div>
+            <p id="exportStatus">Processing...</p>
         </div>
-
-        <div class="controls">
-            <button class="control-btn" id="playBtn" onclick="togglePlay()">▶ Play</button>
-            <button class="control-btn" onclick="stopAudio()">⏹ Stop</button>
-        </div>
-    </div>
-
-    <div class="effects-section">
-        <div class="effect-category">
-            <div class="category-title">🎸 Bass Effects</div>
-            <div class="effects-grid" id="bassEffects"></div>
-        </div>
-        <div class="effect-category">
-            <div class="category-title">🎧 Remix Effects</div>
-            <div class="effects-grid" id="remixEffects"></div>
-        </div>
-        <div class="effect-category">
-            <div class="category-title">🔊 Sound Effects</div>
-            <div class="effects-grid" id="soundEffects"></div>
-        </div>
-    </div>
-
-    <div class="custom-effects-section">
-        <div class="category-title">🎨 My Custom Effects & Sounds</div>
-        <button class="add-song-btn" onclick="openCustomModal()">+ Add Custom Effect/Sound</button>
-        <div class="effects-grid" id="customEffects"></div>
-    </div>
+    </section>
 </div>
 
-<!-- Custom Effect Modal -->
-<div class="modal" id="customModal">
-    <div class="modal-content">
-        <h2>Add Custom Effect/Sound</h2>
-        <label>Audio File:</label>
-        <input type="file" id="customAudioInput" accept="audio/*">
-        <label>Effect Name:</label>
-        <input type="text" id="customName" placeholder="e.g. My Bass Drop">
-        <label>Color:</label>
-        <input type="color" id="customColor" value="#ff6b6b">
-        <label>Type:</label>
-        <select id="customType">
-            <option value="hold">Hold to Play</option>
-            <option value="tap">Tap to Play Full</option>
-        </select>
-        <div class="modal-buttons">
-            <button class="modal-btn save-btn" onclick="saveCustomEffect()">💾 Save</button>
-            <button class="modal-btn cancel-btn" onclick="closeModal('customModal')">❌ Cancel</button>
-        </div>
-    </div>
-</div>
-
-<!-- Block Modal -->
-<div class="modal" id="blockModal">
-    <div class="modal-content">
-        <h2>Add Effect Block</h2>
-        <label>Effect Name:</label>
-        <input type="text" id="blockEffectName" placeholder="e.g. Bass Boost">
-        <label>Start Time (sec):</label>
-        <input type="number" id="blockStart" value="0" step="0.1">
-        <label>End Time (sec):</label>
-        <input type="number" id="blockEnd" value="10" step="0.1">
-        <label>Color:</label>
-        <input type="color" id="blockColor" value="#4facfe">
-        <div class="modal-buttons">
-            <button class="modal-btn save-btn" onclick="saveBlock()">💾 Save</button>
-            <button class="modal-btn cancel-btn" onclick="closeModal('blockModal')">❌ Cancel</button>
-        </div>
-    </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
+<!-- lamejs for MP3 encoding -->
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
 <script src="script.js"></script>
+
+<script>
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+</script>
+
 </body>
 </html>
