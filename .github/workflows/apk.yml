@@ -17,25 +17,33 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install Cordova
-        run: npm install -g cordova
-
-      - name: Setup Java
+      - name: Setup Java 11
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '11'
 
+      - name: Install Cordova
+        run: npm install -g cordova
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        env:
+          SKIP_JDK_VERSION_CHECK: true
+
+      - name: Accept Android Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Build APK
         run: |
           cordova create myapp com.remix.app RemixApp
-          cp -r index.html style.css script.js manifest.json sw.js myapp/www/
+          cp index.html style.css script.js manifest.json sw.js myapp/www/
           cd myapp
           cordova platform add android
           cordova build android --release
+        env:
+          SKIP_JDK_VERSION_CHECK: true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
