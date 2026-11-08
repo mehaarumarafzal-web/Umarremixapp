@@ -8,7 +8,7 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,16 +24,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Capacitor
-        run: |
-          npm init -y
-          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
-
-      - name: Initialize Capacitor Project
-        run: |
-          npx cap init "Remix Studio" "com.nahi.remixapp" --web-dir="."
-          npx cap add android@latest
-
       - name: Configure Android SDK
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
@@ -45,6 +35,28 @@ jobs:
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Install Capacitor Packages
+        run: |
+          npm init -y
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
+
+      - name: Create Capacitor Config Manually
+        run: |
+          cat > capacitor.config.json << 'EOF'
+          {
+            "appId": "com.nahi.remixapp",
+            "appName": "Remix Studio",
+            "webDir": ".",
+            "bundledWebRuntime": false
+          }
+          EOF
+
+      - name: Add Android Platform
+        run: npx cap add android
+
+      - name: Copy Web Assets to Android
+        run: npx cap copy android
 
       - name: Build Debug APK
         run: |
