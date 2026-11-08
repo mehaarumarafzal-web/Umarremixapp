@@ -1,0 +1,47 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android Licenses
+        run: yes | sdkmanager --licenses
+
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      - name: Create Cordova Project & Build APK
+        run: |
+          # Naya Cordova project banayein
+          cordova create RemixApp com.nahi.remixapp RemixApp
+          
+          # Aapki files ko Cordova ke www folder me copy karein
+          cp index.html style.css script.js manifest.json sw.js RemixApp/www/
+          
+          # Android platform add karein aur build karein
+          cd RemixApp
+          cordova platform add android@12.0.0
+          cordova build android
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RemixApp-APK
+          path: RemixApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk
